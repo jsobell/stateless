@@ -15,7 +15,7 @@ namespace Stateless
             readonly TState _source;
             readonly TState _destination;
             readonly TTrigger _trigger;
-            readonly object _tag;
+            readonly TTag _tag;
 
             /// <summary>
             /// Construct a transition.
@@ -50,7 +50,7 @@ namespace Stateless
             /// <summary>
             /// Optional data associated with the transition.
             /// </summary>
-            public object Tag { get { return _tag; } }
+            public TTag Tag { get { return _tag; } }
 
             /// <summary>
             /// True if the transition is a re-entry, i.e. the identity transition.
