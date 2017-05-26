@@ -2,7 +2,7 @@
 
 namespace Stateless
 {
-    public partial class StateMachine<TState, TTrigger>
+    public partial class StateMachine<TState, TTrigger, TTag>
     {
         internal class GuardCondition
         {

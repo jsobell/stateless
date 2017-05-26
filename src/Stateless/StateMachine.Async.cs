@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Stateless
 {
-    public partial class StateMachine<TState, TTrigger>
+    public partial class StateMachine<TState, TTrigger, TTag>
     {
         /// <summary>
         /// Activates current state in asynchronous fashion. Actions associated with activating the currrent state
@@ -148,10 +148,12 @@ namespace Stateless
                 return;
             }
 
+            TransitioningTriggerBehaviour ttb = result.Handler as TransitioningTriggerBehaviour;
+
             TState destination;
             if (result.Handler.ResultsInTransitionFrom(source, args, out destination))
             {
-                var transition = new Transition(source, destination, trigger);
+                var transition = new Transition(source, destination, trigger, ttb==null ? default(TTag) : ttb.Tag);
 
                 await representativeState.ExitAsync(transition);
 
@@ -163,7 +165,7 @@ namespace Stateless
             }
             else
             {
-                var transition = new Transition(source, destination, trigger);
+                var transition = new Transition(source, destination, trigger, ttb == null ? default(TTag) : ttb.Tag);
 
                 await CurrentRepresentation.InternalActionAsync(transition, args);
             }

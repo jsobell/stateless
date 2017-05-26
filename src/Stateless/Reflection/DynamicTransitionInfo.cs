@@ -8,7 +8,7 @@ namespace Stateless.Reflection
     /// </summary>
     public class DynamicTransitionInfo : TransitionInfo
     {
-        internal static DynamicTransitionInfo Create<TState, TTrigger>(TTrigger trigger, StateMachine<TState, TTrigger>.DynamicTriggerBehaviour behaviour, string destination)
+        internal static DynamicTransitionInfo Create<TState, TTrigger, TTag>(TTrigger trigger, StateMachine<TState, TTrigger, TTag>.DynamicTriggerBehaviour behaviour, string destination)
         {
             var transition = new DynamicTransitionInfo
             {

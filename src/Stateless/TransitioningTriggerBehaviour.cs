@@ -5,11 +5,15 @@ using System.Text;
 
 namespace Stateless
 {
-    public partial class StateMachine<TState, TTrigger>
+    public partial class StateMachine<TState, TTrigger, TTag>
     {
         internal class TransitioningTriggerBehaviour : TriggerBehaviour
         {
             readonly TState _destination;
+            Action _triggerAction = null;
+            Reflection.InvocationInfo _triggerActionInfo = null;
+
+            public TTag Tag { get; internal set; } = default(TTag);
 
             internal TState Destination { get { return _destination; } }
 
@@ -20,10 +24,31 @@ namespace Stateless
                 _destination = destination;
             }
 
+            public TransitioningTriggerBehaviour(TTrigger trigger, TState destination, TransitionGuard transitionGuard,
+                Action action, Reflection.InvocationInfo invocationInfo)
+                : base(trigger, transitionGuard)
+            {
+                _destination = destination;
+                _triggerAction = action;
+                _triggerActionInfo = invocationInfo;
+            }
+
+            public void SetAction(Action action, Reflection.InvocationInfo info)
+            {
+                _triggerAction = action;
+                _triggerActionInfo = info;
+            }
+
             public override bool ResultsInTransitionFrom(TState source, object[] args, out TState destination)
             {
                 destination = _destination;
                 return true;
+            }
+
+            public override void IsFiring()
+            {
+                if (_triggerAction != null)
+                    _triggerAction();
             }
         }
     }

@@ -10,7 +10,33 @@ namespace Stateless
     /// </summary>
     /// <typeparam name="TState">The type used to represent the states.</typeparam>
     /// <typeparam name="TTrigger">The type used to represent the triggers that cause state transitions.</typeparam>
-    public partial class StateMachine<TState, TTrigger>
+    public partial class StateMachine<TState, TTrigger>: StateMachine<TState, TTrigger, Object>
+    {
+        /// <summary>
+        /// Construct a state machine with external state storage.
+        /// </summary>
+        /// <param name="stateAccessor">A function that will be called to read the current state value.</param>
+        /// <param name="stateMutator">An action that will be called to write new state values.</param>
+        public StateMachine(Func<TState> stateAccessor, Action<TState> stateMutator) : base(stateAccessor, stateMutator)
+        {
+        }
+
+        /// <summary>
+        /// Construct a state machine.
+        /// </summary>
+        /// <param name="initialState">The initial state.</param>
+        public StateMachine(TState initialState) : base(initialState)
+        {
+        }
+    }
+
+    /// <summary>
+    /// Models behaviour as transitions between a finite set of states.
+    /// </summary>
+    /// <typeparam name="TState">The type used to represent the states.</typeparam>
+    /// <typeparam name="TTrigger">The type used to represent the triggers that cause state transitions.</typeparam>
+    /// <typeparam name="TTag">The type used to represent the identifier in state transitions.</typeparam>
+    public partial class StateMachine<TState, TTrigger, TTag>
     {
         readonly IDictionary<TState, StateRepresentation> _stateConfiguration = new Dictionary<TState, StateRepresentation>();
         readonly IDictionary<TTrigger, TriggerWithParameters> _triggerConfiguration = new Dictionary<TTrigger, TriggerWithParameters>();
@@ -283,10 +309,14 @@ namespace Stateless
                 return;
             }
 
+            TransitioningTriggerBehaviour ttb = result.Handler as TransitioningTriggerBehaviour;
+
             TState destination;
             if (result.Handler.ResultsInTransitionFrom(source, args, out destination))
             {
-                var transition = new Transition(source, destination, trigger);
+                result.Handler.IsFiring();
+
+                var transition = new Transition(source, destination, trigger, ttb == null ? default(TTag) : ttb.Tag);
 
                 representativeState.Exit(transition);
 
@@ -298,7 +328,7 @@ namespace Stateless
             }
             else
             {
-                var transition = new Transition(source, destination, trigger);
+                var transition = new Transition(source, destination, trigger, ttb == null ? default(TTag) : ttb.Tag);
 
                 CurrentRepresentation.InternalAction(transition, args);
             }
@@ -309,12 +339,13 @@ namespace Stateless
         /// is fired.
         /// </summary>
         /// <param name="unhandledTriggerAction">An action to call when an unhandled trigger is fired.</param>
-        public void OnUnhandledTrigger(Action<TState, TTrigger> unhandledTriggerAction)
+        public void OnUnhandledTrigger(Action<TState, TTrigger, TTag> unhandledTriggerAction)
         {
-            if (unhandledTriggerAction == null) throw new ArgumentNullException("unhandledTriggerAction");
-            _unhandledTriggerAction = new UnhandledTriggerAction.Sync((s, t, c) => unhandledTriggerAction(s, t));
+            if (unhandledTriggerAction == null) throw new ArgumentNullException(nameof(unhandledTriggerAction));
+            _unhandledTriggerAction = new UnhandledTriggerAction.Sync((s, t, c) => unhandledTriggerAction(s, t , default(TTag)));
         }
 
+/*
         /// <summary>
         /// Override the default behaviour of throwing an exception when an unhandled trigger
         /// is fired.
@@ -325,6 +356,7 @@ namespace Stateless
             if (unhandledTriggerAction == null) throw new ArgumentNullException("unhandledTriggerAction");
             _unhandledTriggerAction = new UnhandledTriggerAction.Sync(unhandledTriggerAction);
         }
+*/
 
         /// <summary>
         /// Determine if the state machine is in the supplied state.
@@ -439,7 +471,7 @@ namespace Stateless
         /// of the transition.</param>
         public void OnTransitioned(Action<Transition> onTransitionAction)
         {
-            if (onTransitionAction == null) throw new ArgumentNullException("onTransitionAction");
+            if (onTransitionAction == null) throw new ArgumentNullException(nameof(onTransitionAction));
             _onTransitionedEvent.Register(onTransitionAction);
         }
     }

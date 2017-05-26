@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Stateless
 {
-    partial class StateMachine<TState, TTrigger>
+    partial class StateMachine<TState, TTrigger, TTag>
     {
         /// <summary>
         /// Associates configured parameters with an underlying trigger value.
